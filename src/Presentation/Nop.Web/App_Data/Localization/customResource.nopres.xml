@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Language Name="English">
+  <LocaleResource Name="Custom.Order.GiftMessage">
+    <Value>Gift message</Value>
+  </LocaleResource>
+  <LocaleResource Name="Custom.Admin.Orders.Fields.GiftMessage">
+    <Value>Gift message</Value>
+  </LocaleResource>
+  <LocaleResource Name="Custom.Admin.Orders.Fields.GiftMessage.Hint">
+    <Value>Gift message</Value>
+  </LocaleResource>
+  <LocaleResource Name="Custom.Checkout.GiftMessage">
+    <Value>Gift message</Value>
+  </LocaleResource>
+</Language>

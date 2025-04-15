@@ -745,6 +745,11 @@ var ConfirmOrder = {
                 postData['g-recaptcha-response'] = captchaTok;
             }
 
+            //inject gift message
+            if ($('#giftMessage').length > 0) {
+              postData.giftMessage = $('#giftMessage').val();
+            } 
+
             addAntiForgeryToken(postData);
             $.ajax({
                 cache: false,
