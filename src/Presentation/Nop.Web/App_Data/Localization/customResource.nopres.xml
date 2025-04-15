@@ -12,4 +12,10 @@
   <LocaleResource Name="Custom.Checkout.GiftMessage">
     <Value>Gift message</Value>
   </LocaleResource>
+  <LocaleResource Name="Custom.Admin.Catalog.Categories.List.SearchAttributeName">
+    <Value>Attribute name</Value>
+  </LocaleResource>
+  <LocaleResource Name="Custom.Admin.Catalog.Categories.List.SearchAttributeName.Hint">
+    <Value>Search by attribute name</Value>
+  </LocaleResource>
 </Language>

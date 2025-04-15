@@ -24,16 +24,16 @@ public partial interface IProductAttributeService
     /// <returns>A task that represents the asynchronous operation</returns>
     Task DeleteProductAttributesAsync(IList<ProductAttribute> productAttributes);
 
-    /// <summary>
-    /// Gets all product attributes
-    /// </summary>
-    /// <param name="pageIndex">Page index</param>
-    /// <param name="pageSize">Page size</param>
-    /// <returns>
-    /// A task that represents the asynchronous operation
-    /// The task result contains the product attributes
-    /// </returns>
-    Task<IPagedList<ProductAttribute>> GetAllProductAttributesAsync(int pageIndex = 0, int pageSize = int.MaxValue);
+    ///// <summary>
+    ///// Gets all product attributes
+    ///// </summary>
+    ///// <param name="pageIndex">Page index</param>
+    ///// <param name="pageSize">Page size</param>
+    ///// <returns>
+    ///// A task that represents the asynchronous operation
+    ///// The task result contains the product attributes
+    ///// </returns>
+    //Task<IPagedList<ProductAttribute>> GetAllProductAttributesAsync(int pageIndex = 0, int pageSize = int.MaxValue);
 
     /// <summary>
     /// Gets a product attribute 
