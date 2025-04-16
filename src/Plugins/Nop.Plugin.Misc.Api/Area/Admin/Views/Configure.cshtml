@@ -1,0 +1,36 @@
+﻿@model ConfigurationModel
+
+@{
+    Layout = "_ConfigurePlugin";
+}
+
+<form asp-controller="NopApi" asp-action="Configure" method="post">
+    <nop-cards>
+        <nop-card asp-name="api-general" asp-icon="fas fa-info" asp-title="@T("Plugins.Misc.Api.Configuration")" asp-hide-block-attribute-name="nopapi-configure" asp-hide="false" asp-advanced="false">
+            <div class="card-body">
+                <div class="card card-default">
+                    <div class="card-body">
+                        <p>
+                            Check To enable this plugin.<br />
+                            <br />
+                        </p>
+                        <div class="form-group row">
+                            <div class="col-md-3">
+                                <nop-label asp-for="Enable"/>
+                            </div>
+                            <div class="col-md-9">
+                                <nop-editor asp-for="Enable"/>
+                                <span asp-validation-for="Enable"></span>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <button type="submit" name="save" class="btn btn-primary">
+                                @T("Admin.Common.Save")
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nop-card>
+    </nop-cards>
+</form>
