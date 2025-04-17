@@ -1,80 +1,127 @@
-﻿﻿nopCommerce: free and open-source eCommerce solution
-===========
+﻿# Nopcommerce Bamboocard Task Dockerized Deployment
 
-[nopCommerce](https://www.nopcommerce.com/?utm_source=github&utm_medium=content&utm_campaign=homepage) is the best open-source eCommerce platform. nopCommerce is free, and it is the most popular ASP.NET Core shopping cart.
+This project provides an easy-to-deploy, containerized version of NopCommerce, with all the necessary configurations, including database and plugins.
 
-![nopCommerce demo](https://www.nopcommerce.com/images/github/responsive_devices_codeplex.png#v1)
+## Prerequisites
 
-### Key features ###
+- Docker Desktop installed on your local machine (or use Docker on a server).
 
-* The product is being developed and supported by the professional team since 2008.
-* nopCommerce has been downloaded more than 3,000,000 times.
-* The active developer community has more than 250,000 members.
-* nopCommerce runs on .NET 9 with an MS SQL 2012 (or higher) backend database.
-* nopCommerce is cross-platform, and you can run it on Windows, Linux, or Mac.
-* nopCommerce supports Docker out of the box, so you can easily run nopCommerce on a Linux machine.
-* nopCommerce supports PostgreSQL and MySQL databases.
-* nopCommerce fully supports web farms. You can read more about it [here](https://docs.nopcommerce.com/en/developer/tutorials/web-farms.html?utm_source=github&utm_medium=referral&utm_campaign=documentation&utm_content=text).  
-* All methods in nopCommerce are async.
-* nopCommerce supports multi-factor authentication out of the box.
-* Start our [online course for developers](https://nopcommerce.com/training?utm_source=github&utm_medium=referral&utm_campaign=course&utm_content=text) and get the practical and technical skills you need to run and customize nopCommerce websites.
+## Steps to Build and Run the Containerized Application
 
-![Logo](https://www.nopcommerce.com/images/github/logos.png#v2)
+1. **Clone the Repository:**
+   Clone nopcommerce-task-bamboocard GitHub repository to your local machine.
 
-nopCommerce architecture follows well-known software patterns and the best security practices. The source code is fully customizable. Pluggable and clear architecture makes it easy to develop custom functionality and follow any business requirements.
+   ```bash
+   git clone https://github.com/bhautikpatel1907/nopcommerce-task-bamboocard.git
+   cd nopcommerce-task-bamboocard
+   ```
 
-Using the latest Microsoft technologies, nopCommerce provides high performance, stability, and security. nopCommerce is also fully compatible with Azure and web farms.
+2. **Build and Run the Docker Containers:**
+   Ensure Docker Desktop is running, then build and start the containers.
 
-Our clear and detailed [documentation](https://docs.nopcommerce.com/developer/index.html?utm_source=github&utm_medium=referral&utm_campaign=documentation&utm_content=text) and [online course](https://nopcommerce.com/training?utm_source=github&utm_medium=referral&utm_campaign=course&utm_content=text) for developers will help you start with nopCommerce easily.
+   ```bash
+   docker-compose up --build
+   ```
 
+   This command will:
+   - Build the NopCommerce application image from the `Dockerfile`.
+   - Start two containers:
+     - `nopcommerce_web` (NopCommerce application)
+     - `nopcommerce_database` (SQL Server)
+   - Expose the NopCommerce application on port `8080`.
 
-### The advantages of working with nopCommerce ###
+3. **Access the Application:**
+   Once the containers are up and running, open your browser and navigate to:
 
-nopCommerce offers powerful [out-of-the-box features](https://www.nopcommerce.com/features?utm_source=github&utm_medium=referral&utm_campaign=features&utm_content=text) for creating an online store of any size and type.
+   ```bash
+   http://localhost:8080
+   ```
 
-nopCommerce is integrated with all the popular third-party services. You can find thousands of integrations on nopCommerce [Marketplace](https://www.nopcommerce.com/marketplace?utm_source=github&utm_medium=referral&utm_campaign=marketplace&utm_content=text).
+   Follow the installation wizard to complete the setup of your NopCommerce store.
 
-The [Web API plugin](https://www.nopcommerce.com/web-api?utm_source=github&utm_medium=referral&utm_campaign=WebAPI&utm_content=text) by the nopCommerce team lets you build integrations with third-party services or mobile applications using REST. The Web API plugin is available with source code and covers all methods of nopCommerce: backend and frontend. You can read more about it [here](https://www.nopcommerce.com/web-api?utm_source=github&utm_medium=referral&utm_campaign=WebAPI&utm_content=text).
+   During installation:
+   - **Database Server:** Use `nopcommerce_mssql_server` (container name for the database).
+   - **Username:** `sa`
+   - **Password:** `pass@word1`
 
-Friendly members of the [nopCommerce community](https://www.nopcommerce.com/boards?utm_source=github&utm_medium=referral&utm_campaign=forum&utm_content=text) will always help with advice and share their experiences. nopCommerce core development team provides [professional support](https://www.nopcommerce.com/nopcommerce-premium-support-services?utm_source=github&utm_medium=referral&utm_campaign=premium_support&utm_content=text) within 24 hours.
+4. **Verify Application:**
+   After the setup is complete, you can verify that the NopCommerce application is running by accessing it at `http://localhost:8080`.
 
+## Container Configuration
 
-## Store demo ##
+- **Web Application Container (`nopcommerce_web`)**
+  - Ports: `8080:5000`
+  - Dependencies: `nopcommerce_database`
 
-Evaluate the functionality and convenience of nopCommerce as a customer and store owner.
+- **Database Container (`nopcommerce_database`)**
+  - Ports: `1433:1433`
+  - Environment:
+    - `SA_PASSWORD`: `pass@word1`
+    - `ACCEPT_EULA`: `Y`
+    - `MSSQL_PID`: `Express`
 
-Front End | Admin area
-----|------
-[![ScreenShot](https://www.nopcommerce.com/images/github/public-demo.png#v1)](https://demo.nopcommerce.com?utm_source=github&utm_medium=referral&utm_campaign=demo_store&utm_content=button) | [![ScreenShot](https://www.nopcommerce.com/images/github/admin-demo.png#v1)](https://admin-demo.nopcommerce.com/admin?utm_source=github&utm_medium=referral&utm_campaign=demo_store&utm_content=button)
+## How to Test the API Endpoint
 
+1. **Generate JWT Token:**
+   - Add username and password parameters in the API token request.
+   - Test API requests using Postman or any HTTP client.
 
-### nopCommerce resources ###
+2. **Testing the API:**
+   You can find the Postman collection in the scr/AppData/BambooCards-api.postman_collection.json. Import it into your Postman to test API endpoints, such as authentication & order retrieval.
 
-nopCommerce official site: [https://www.nopcommerce.com](https://www.nopcommerce.com/?utm_source=github&utm_medium=referral&utm_campaign=homepage&utm_content=links)
+## Docker Commands
 
-* [Demo store](https://www.nopcommerce.com/demo?utm_source=github&utm_medium=referral&utm_campaign=demo_store&utm_content=links)
-* [Download nopCommerce](https://www.nopcommerce.com/download-nopcommerce?utm_source=github&utm_medium=referral&utm_campaign=download_nop&utm_content=links)
-* [Online course for developers](https://nopcommerce.com/training?utm_source=github&utm_medium=referral&utm_campaign=course&utm_content=links)
-* [Feature list](https://www.nopcommerce.com/features?utm_source=github&utm_medium=referral&utm_campaign=features&utm_content=links)
-* [Web API plugin](https://www.nopcommerce.com/web-api?utm_source=github&utm_medium=referral&utm_campaign=WebAPI&utm_content=links)
-* [nopCommerce documentation](https://docs.nopcommerce.com?utm_source=github&utm_medium=referral&utm_campaign=documentation&utm_content=links)
-* [Community forums](https://www.nopcommerce.com/boards?utm_source=github&utm_medium=referral&utm_campaign=forum&utm_content=links)
-* [Premium support services](https://www.nopcommerce.com/nopcommerce-premium-support-services?utm_source=github&utm_medium=referral&utm_campaign=premium_support&utm_content=links)
-* [Certified developer program](https://www.nopcommerce.com/certified-developer-program?utm_source=github&utm_medium=referral&utm_campaign=certified_developer&utm_content=links)
-* [nopCommerce partners](https://www.nopcommerce.com/partners?utm_source=github&utm_medium=referral&utm_campaign=solution_partners&utm_content=links)
+- To stop the containers:
 
-nopCommerce YouTube: [The Architecture behind the nopCommerce eCommerce Platform](https://www.youtube.com/watch?v=6gLbizzSA9o&list=PLnL_aDfmRHwtJmzeA7SxrpH3-XDY2ue0a)
+  ```bash
+  docker-compose down
+  ```
 
+- To remove the containers and images:
 
-### Earn with nopCommerce ###
+  ```bash
+  docker-compose down --rmi all
+  ```
+- ----------------------------------------
+- All 4 Task Description:
+Task 1:
+Plugin info: DiscountRequirement.MustBeAssignToCustomerHavingThreeOrMoreOrders - https://prnt.sc/ydDipXXU6k0t
+On Install:
+  - Add discount - https://prnt.sc/lSCMeJOfLFlY , https://prnt.sc/4uX1WUAzi7un
+  - Add discount requirnment and group 
+  - Add Resource strings
+On Uninstall:
+  - Remove discount
+  - Remove discount requirnment and group 
+  - Remove Resource strings
 
-60,000 stores worldwide are powered by nopCommerce, and 10,000 new stores open every year. nopCommerce [solution partners’ directory](https://www.nopcommerce.com/partners?utm_source=github&utm_medium=referral&utm_campaign=solution_partners&utm_content=text_become_partner) gets 80,000+ page views per year from store owners who are looking for a partner to build a store from scratch, migrate from another platform, or improve and customize an existing store.
+Note: 
+- A discount will be applied to the customer who's having 3 or more orders with PAID status. - https://prnt.sc/f9Q4uC4MdPFf
+- I know there was a requirement of adding a setting to enable/disable the plugin & set a percentage. But the requirement is already satisfied as we add the discount. 
+- I have created a "Discount requirements" type plugin because it is the best way to process a discount in NopCommerce.
+- We can also create a Mic-type plugin with a configuration page & set a 10% on the order total calculation service, but I think having a discount-type plugin is the best approach.
 
-Become a solution partner of nopCommerce and get new clients – [learn more](https://www.nopcommerce.com/become-partner?utm_source=github&utm_medium=referral&utm_campaign=become-partner&utm_content=learn_more).
+==================
+Task 2: Modify the Checkout Process
+- Added gift message field at orde confirm screen -  
+- Shows in Admin/Order/Edit - https://prnt.sc/y6xl91g9sw-l
+- Shows in Public/OrderDetail - https://prnt.sc/EFw71NkOiWFB
 
-Create a new graphical theme or develop a new plugin or integration and sell it on the nopCommerce [Marketplace](https://www.nopcommerce.com/marketplace?utm_source=github&utm_medium=referral&utm_campaign=marketplace&utm_content=text_sell_on_marketplace).
+=====================
+Task 3: Allow to search by "Name" on the product attribute page (admin area)
+- Added search panel - https://prnt.sc/jP2lfnwLg90l 
 
-
-### Contribute ###
-
-As a free and open-source project, we are very grateful to everyone who helps us to develop nopCommerce. Please find more details about the options and bonuses for contributors at [contribute page](https://www.nopcommerce.com/contribute?utm_source=github&utm_medium=referral&utm_campaign=contribute&utm_content=text).
+=====================
+Task 4. API Development (Order Retrieval)
+Plugin info: Nop.Plugin.Misc.Api
+Develop a simple API endpoint in NopCommerce for retrieving order details.
+- Developed API Plugin with JWT auth scheme and configure page - https://prnt.sc/jSQMOTkUKXt5
+- Plugin api will only work if valid bearer token is passed and plugin is enabled. 
+- Enable/Disable plugin - https://prnt.sc/rkwHbTc8BeyV
+- API sample
+  1) https://localhost:59579/api/token - To get access  token - https://prnt.sc/_o0a2W8G52_Z
+  2) https://localhost:59579/api/orders/admin@yourstore.com - To fetch customer orders - https://prnt.sc/nyPRGt0AgBoZ
+  
+==============================================================================================================
+- Additional note:
+    The application was published in Release mode using deploy.cmd, and the release artifact is located in src/artifacts/wwwroot. (just deploy and install app, API & Custom Discount plugin will be automatically installed)
