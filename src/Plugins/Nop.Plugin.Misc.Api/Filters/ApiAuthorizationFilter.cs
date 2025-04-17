@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Nop.Plugin.Misc.Api.DTOs;
+using Nop.Services.Customers;
 
 namespace Nop.Plugin.Misc.Api.Filters;
 
@@ -10,19 +11,22 @@ public class ApiAuthorizationFilter : IAsyncAuthorizationFilter
     #region Fields
 
     private readonly ApiSettings _settings;
+    private readonly ICustomerService _customerService;
 
     #endregion
 
     #region Ctor
 
-    public ApiAuthorizationFilter(ApiSettings settings)
+    public ApiAuthorizationFilter(ApiSettings settings,
+        ICustomerService customerService)
     {
         _settings = settings;
+        _customerService = customerService;
     }
 
     #endregion
 
-    public Task OnAuthorizationAsync(AuthorizationFilterContext context)
+    public async Task OnAuthorizationAsync(AuthorizationFilterContext context)
     {
         if (!_settings.Enable)
         {
@@ -34,10 +38,11 @@ public class ApiAuthorizationFilter : IAsyncAuthorizationFilter
             {
                 StatusCode = StatusCodes.Status403Forbidden
             };
-            return Task.CompletedTask;
+            return;
         }
 
-        if (!context.HttpContext.User.Identity?.IsAuthenticated ?? false)
+        var user = context.HttpContext.User;
+        if (!user.Identity?.IsAuthenticated ?? false)
         {
             context.Result = new JsonResult(new BaseApiResponse<string>
             {
@@ -47,9 +52,40 @@ public class ApiAuthorizationFilter : IAsyncAuthorizationFilter
             {
                 StatusCode = StatusCodes.Status401Unauthorized
             };
+            return;
         }
 
-        return Task.CompletedTask;
+        // Extract username from token
+        var username = user.Identity?.Name;
+        if (string.IsNullOrEmpty(username))
+        {
+            context.Result = new JsonResult(new BaseApiResponse<string>
+            {
+                Success = false,
+                Message = "Username is missing in token."
+            })
+            {
+                StatusCode = StatusCodes.Status401Unauthorized
+            };
+            return;
+        }
+
+        //get customer
+        var customer = await _customerService.GetCustomerByUsernameAsync(username);
+        if (customer == null || !customer.Active || customer.Deleted)
+        {
+            context.Result = new JsonResult(new BaseApiResponse<string>
+            {
+                Success = false,
+                Message = "Invalid or inactive customer."
+            })
+            {
+                StatusCode = StatusCodes.Status403Forbidden
+            };
+            return;
+        }
+
+        return;
     }
 }
 

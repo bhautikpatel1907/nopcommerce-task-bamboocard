@@ -36,6 +36,8 @@ public class OrderApiController : BaseApiController
             if (customer == null)
                 return BadRequestResponse("Customer not found with the specific email.");
 
+            //Of course, we can validate logged in customer can access his order, but I'm skiping this it in this demo.
+
             //get customer orders
             var orders = await _orderService.SearchOrdersAsync(customerId: customer.Id);
 

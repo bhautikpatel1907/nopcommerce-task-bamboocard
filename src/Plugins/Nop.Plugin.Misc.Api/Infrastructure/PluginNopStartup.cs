@@ -19,8 +19,8 @@ public class PluginNopStartup : INopStartup
     private void AddJwtAuthScheme(IServiceCollection services)
     {
         var secretKey = ApiDefaults.ApiKey;
-        var issuer = "https://localhost:59579/"; //store url
-        var audience = "https://localhost:59579/";//store url
+        var issuer = "yourdomain.com"; //enter you store domain, I'm keeping it to static for demo purpose
+        var audience = "yourdomain.com";//enter you store domain, I'm keeping it to static for demo purpose
 
         var key = Encoding.UTF8.GetBytes(secretKey);
 
