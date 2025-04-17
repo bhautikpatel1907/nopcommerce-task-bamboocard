@@ -3,14 +3,16 @@ services:
         build: .
         container_name: nopcommerce
         ports:
-            - "80:80"
+            - "8080:5000"
         depends_on:
             - nopcommerce_database
     nopcommerce_database:
         image: "mcr.microsoft.com/mssql/server:2019-latest"
         container_name: nopcommerce_mssql_server
+        ports:
+            - "1433:1433"
         environment:
-            SA_PASSWORD: "nopCommerce_db_password"
+            SA_PASSWORD: "pass@word1"
             ACCEPT_EULA: "Y"
             MSSQL_PID: "Express"
 
