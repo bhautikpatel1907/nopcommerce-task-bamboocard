@@ -1,0 +1,11 @@
+﻿{
+  "Group": "Misc",
+  "FriendlyName": "Nop API",
+  "SystemName": "Misc.NopApi",
+  "Version": "1.0",
+  "SupportedVersions": [ "4.80" ],
+  "Author": "bhautik patel",
+  "DisplayOrder": 1,
+  "FileName": "Nop.Plugin.Misc.Api.dll",
+  "Description": "nop api, for baamboo cards. Copyrights: Bhautk Patel"
+}
