@@ -1,4 +1,6 @@
-﻿# Nopcommerce Bamboocard Task Dockerized Deployment
+![Build Status](https://github.com/bhautikpatel1907/nopcommerce-task-bamboocard/actions/workflows/dotnet.yml/badge.svg)
+
+# Nopcommerce Bamboocard Task Dockerized Deployment
 
 This project provides an easy-to-deploy, containerized version of NopCommerce, with all the necessary configurations, including database and plugins.
 
