@@ -49,10 +49,6 @@ jobs:
 
       - name: Build project
         run: dotnet publish src/Presentation/Nop.Web/Nop.Web.csproj -c Release -o published_output
-
-      - name: Clean published_output folder
-        run: |
-          if [ -d "published_output" ]; then rm -rf published_output; fi
     
       - name: Zip Published Output
         run: zip -r nopcommerce-release.zip published_output/
