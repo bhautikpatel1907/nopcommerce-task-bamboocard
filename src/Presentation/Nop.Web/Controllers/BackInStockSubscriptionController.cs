@@ -14,7 +14,6 @@ using Nop.Web.Models.Common;
 
 namespace Nop.Web.Controllers;
 
-//temp
 [AutoValidateAntiforgeryToken]
 public partial class BackInStockSubscriptionController : BasePublicController
 {
