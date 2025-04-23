@@ -5,25 +5,31 @@ name: .NET
 
 on:
   push:
-    branches: [ "dev" ]
+    branches: 
+      - dev       # 🔄 Run on feature/active development
+      - main      # ✅ Run when PR is merged into main
   pull_request:
-    branches: [ "main" ]
+    branches: 
+      - main      # 🧪 Run when PR targets main
 
 jobs:
   build:
-
     runs-on: windows-latest
 
     steps:
     - uses: actions/checkout@v4
+
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 9.0.x
+
     - name: Restore dependencies
       run: dotnet restore src/NopCommerce.sln
+
     - name: Build
       run: dotnet build src/NopCommerce.sln --configuration Release
+
     # - name: Run Tests (optional)
     #   run: dotnet test src/NopCommerce.sln
     #   continue-on-error: true
