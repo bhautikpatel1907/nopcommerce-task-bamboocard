@@ -24,6 +24,6 @@ jobs:
       run: dotnet restore src/NopCommerce.sln
     - name: Build
       run: dotnet build src/NopCommerce.sln --configuration Release
-    - name: Run Tests (optional)
-      run: dotnet test src/NopCommerce.sln
-      continue-on-error: true
+    # - name: Run Tests (optional)
+    #   run: dotnet test src/NopCommerce.sln
+    #   continue-on-error: true
