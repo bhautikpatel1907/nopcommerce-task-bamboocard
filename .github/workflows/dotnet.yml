@@ -34,7 +34,7 @@ jobs:
     #   run: dotnet test src/NopCommerce.sln
     #   continue-on-error: true
 
-    release:
+  release:
     needs: build
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
