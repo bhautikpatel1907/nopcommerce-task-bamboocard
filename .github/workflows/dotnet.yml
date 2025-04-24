@@ -12,6 +12,9 @@ on:
    # branches: 
     #  - main      # 🧪 Run when PR targets main
 
+permissions:
+  contents: write # ✅ ADD THIS BLOCK to give the workflow permission to write to releases
+  
 jobs:
   build:
     runs-on: windows-latest
