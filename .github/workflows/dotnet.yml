@@ -85,7 +85,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Extract Artifact
-        run: Expand-Archive -Path nopcommerce-release.zip -DestinationPath deployed_output
+        run: Expand-Archive -Path nopcommerce-release.zip -DestinationPath deployed_output -Force
 
       - name: Deploy to IIS
         shell: powershell
