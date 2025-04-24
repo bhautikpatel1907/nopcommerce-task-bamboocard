@@ -104,3 +104,9 @@ jobs:
 
           # Copy new release files
           Copy-Item -Path "deployed_output\*" -Destination $iisPath -Recurse -Force
+
+          - name: Restart IIS Site
+            shell: powershell
+            run: |
+              Import-Module WebAdministration
+              Restart-WebAppPool -Name "DefaultAppPool"
