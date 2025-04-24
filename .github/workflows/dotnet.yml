@@ -37,7 +37,7 @@ jobs:
     #   run: dotnet test src/NopCommerce.sln
     #   continue-on-error: true
 
-  release-and-deploy:
+  release:
     needs: build
     runs-on: self-hosted
     if: github.ref == 'refs/heads/main'
@@ -53,26 +53,51 @@ jobs:
       - name: Publish Project
         run: dotnet publish src/Presentation/Nop.Web/Nop.Web.csproj -c Release -o published_output
     
-    # ------------------------ COMMENTED OUT STEPS ------------------------
+      - name: Zip Published Output
+        run: zip -r nopcommerce-release.zip published_output/
 
-    # - name: Zip Published Output
-    #   run: zip -r nopcommerce-release.zip published_output/  # 📦 Create ZIP from published output
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ github.run_number }}
+          name: Release ${{ github.run_number }}
+          body: "Auto release generated from CI"
+          files: nopcommerce-release.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    # - name: Create GitHub Release
-    #   uses: softprops/action-gh-release@v2
-    #   with:
-    #     tag_name: v${{ github.run_number }}
-    #     name: Release ${{ github.run_number }}
-    #     body: "Auto release generated from CI"
-    #     files: nopcommerce-release.zip
-    #   env:
-    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # 🔐 Auth for creating release
+  deploy:
+    needs: release
+    runs-on: self-hosted
+    if: github.ref == 'refs/heads/main'
 
-    # ---------------------------------------------------------------------
+    steps:
 
-      - name: Deploy to Local IIS
+      - name: Download Release Artifact
+        uses: marvinpinto/action-download-release-asset@v1.1.3
+        with:
+          repo: ${{ github.repository }}
+          tag: v${{ github.run_number }}
+          file: nopcommerce-release.zip
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Artifact
+        run: Expand-Archive -Path nopcommerce-release.zip -DestinationPath deployed_output
+
+      - name: Deploy to IIS
+        shell: powershell
         run: |
-          Write-Host "🧹 Cleaning old deployment..."
-          Remove-Item -Recurse -Force "C:\inetpub\wwwroot\bamboo-git*"  # ❌ Remove previous files
-          Write-Host "📁 Copying new build to IIS path..."
-          Copy-Item -Path "published_output\*" -Destination "C:\inetpub\wwwroot\bamboo-git" -Recurse  # ✅ Deploy new build
+          $iisPath = "C:\inetpub\wwwroot\bamboo-git"
+
+          # Ensure destination exists
+          if (!(Test-Path $iisPath)) {
+            New-Item -ItemType Directory -Path $iisPath | Out-Null
+          }
+
+          # Remove all except critical folders/files
+          Get-ChildItem -Path $iisPath | Where-Object {
+            $_.Name -notin @("App_Data", "appsettings.json", "plugins.json", "wwwroot")
+          } | Remove-Item -Recurse -Force
+
+          # Copy new release files
+          Copy-Item -Path "deployed_output\*" -Destination $iisPath -Recurse -Force
