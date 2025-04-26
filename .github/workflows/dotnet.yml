@@ -47,9 +47,23 @@ jobs:
           # Wait to ensure processes release locks
           Start-Sleep -Seconds 5
 
-          # Sync files (excluding App_Data, wwwroot, Logs, and web.config)  
-          robocopy "deployed_output" $iisPath /MIR /XD "App_Data" "wwwroot" "Logs" /XF "web.config" /NP /NDL /NJH /NJS /R:2 /W:1  
+           # 2. Resilient file sync with robocopy
+          Write-Host "Starting deployment..."
+          robocopy "deployed_output" $iisPath /MIR `
+            /XD "App_Data" "wwwroot" "Logs" `
+            /XF "web.config" `
+            /NP /NDL /NJH /NJS `
+            /R:3 /W:2 /LOG+:deployment.log  # Increased retries and logging 
 
-          # Restart IIS
+          # 3. Verify success (robocopy exit codes 0-7 are OK)
+          if ($LASTEXITCODE -ge 8) {
+              Write-Host "::error::Deployment failed (Robocopy error $LASTEXITCODE)"
+              Get-Content deployment.log | Write-Host
+              exit 1
+          }
+
+          # 4. Restart IIS
+          Write-Host "Restarting IIS..."
           Start-WebAppPool -Name $appPoolName
           Start-WebSite -Name $siteName
+          Write-Host "✓ Deployment successful!"
