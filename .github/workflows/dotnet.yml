@@ -56,6 +56,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: published_output
+          path: published_output
     
       - name: Zip Published Output
         run: zip -r nopcommerce-release.zip published_output/
