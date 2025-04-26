@@ -66,4 +66,4 @@ jobs:
           Write-Host "Restarting IIS..."
           Start-WebAppPool -Name $appPoolName
           Start-WebSite -Name $siteName
-          Write-Host "✓ Deployment successful!"
+          Write-Host "Deployment successful!"
