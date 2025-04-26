@@ -97,7 +97,16 @@ jobs:
       - name: Deploy to IIS
         shell: powershell
         run: |
-          $iisPath = "C:\inetpub\wwwroot\bamboo-git"
+          $iisPath = "C:\inetpub\wwwroot\bamboo-git\published_output"
+          $siteName = "baamboo-git"   # IIS site name
+          $appPoolName = "baamboo-git"  #app pool name
+
+          Import-Module WebAdministration
+
+          # Stop site (unlock files)
+          if ((Get-Website -Name $siteName).state -eq 'Started') {
+            Stop-Website -Name $siteName
+          }
 
           # Ensure destination exists
           if (!(Test-Path $iisPath)) {
@@ -108,9 +117,9 @@ jobs:
             Get-ChildItem -Path $iisPath | Where-Object {
               $_.Name -notin @(
                 "App_Data",           # database settings
-                "appsettings.json",   # app configuration
-                "plugins.json",       # active plugin list
-                "wwwroot"             # static files like images
+                "wwwroot",            # static files like images
+                "Logs",
+                "web.config"
               )
             } | Remove-Item -Recurse -Force
 
