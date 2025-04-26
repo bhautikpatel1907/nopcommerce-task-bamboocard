@@ -1,15 +1,76 @@
 # This workflow will build a NopCommerce v4.80 .NET v9.0-based project
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
 
-name: Deploy bamboo NopCommerce
+name: NopComv4.80-bamboo .NET CI/CD Pipeline
 
 on:
-  workflow_dispatch: # Manual trigger
+  push:
+    branches: 
+      - dev       # 🔄 Run on feature/active development
+      - main      # ✅ Run when PR is merged into main
+  #pull_request:
+   # branches: 
+    #  - main      # 🧪 Run when PR targets main
 
 permissions:
-  contents: read
+  contents: write 
 
 jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 9.0.x
+
+    - name: Restore dependencies
+      run: dotnet restore src/NopCommerce.sln
+
+    - name: Build
+      run: dotnet build src/NopCommerce.sln --configuration Release
+
+    # - name: Run Tests (optional)
+    #   run: dotnet test src/NopCommerce.sln
+    #   continue-on-error: true
+    
+    - name: Publish Project
+      run: dotnet publish src/Presentation/Nop.Web/Nop.Web.csproj -c Release -o published_output
+
+    - name: Upload Published Output
+      uses: actions/upload-artifact@v4
+      with:
+        name: published_output
+        path: published_output/
+        
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Download Published Output
+        uses: actions/download-artifact@v4
+        with:
+          name: published_output
+          path: published_output
+    
+      - name: Zip Published Output
+        run: zip -r nopcommerce-release.zip published_output/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ github.run_number }}
+          name: Release ${{ github.run_number }}
+          body: "Auto release generated from CI"
+          files: nopcommerce-release.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
   deploy:
     runs-on: self-hosted
     steps:
