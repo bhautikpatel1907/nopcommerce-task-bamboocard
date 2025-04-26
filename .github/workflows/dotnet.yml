@@ -36,22 +36,26 @@ jobs:
     # - name: Run Tests (optional)
     #   run: dotnet test src/NopCommerce.sln
     #   continue-on-error: true
+    
+    - name: Publish Project
+      run: dotnet publish src/Presentation/Nop.Web/Nop.Web.csproj -c Release -o published_output
 
+    - name: Upload Published Output
+      uses: actions/upload-artifact@v4
+      with:
+        name: published_output
+        path: published_output/
+        
   release:
     needs: build
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
 
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up .NET
-        uses: actions/setup-dotnet@v4
+      - name: Download Published Output
+        uses: actions/download-artifact@v4
         with:
-          dotnet-version: 9.0.x
-
-      - name: Publish Project
-        run: dotnet publish src/Presentation/Nop.Web/Nop.Web.csproj -c Release -o published_output
+          name: published_output
     
       - name: Zip Published Output
         run: zip -r nopcommerce-release.zip published_output/
@@ -72,7 +76,6 @@ jobs:
     if: github.ref == 'refs/heads/main'
 
     steps:
-
       - name: Wait for GitHub Release to be created
         run: Start-Sleep -Seconds 15
         
@@ -84,6 +87,9 @@ jobs:
           fileName: "nopcommerce-release.zip"
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Clean Existing Extract Folder
+        run: Remove-Item -Path deployed_output -Recurse -Force -ErrorAction SilentlyContinue
+      
       - name: Extract Artifact
         run: Expand-Archive -Path nopcommerce-release.zip -DestinationPath deployed_output -Force
 
@@ -98,15 +104,20 @@ jobs:
           }
 
           # Remove all except critical folders/files
-          Get-ChildItem -Path $iisPath | Where-Object {
-            $_.Name -notin @("App_Data", "appsettings.json", "plugins.json", "wwwroot")
-          } | Remove-Item -Recurse -Force
+            Get-ChildItem -Path $iisPath | Where-Object {
+              $_.Name -notin @(
+                "App_Data",           # database settings
+                "appsettings.json",   # app configuration
+                "plugins.json",       # active plugin list
+                "wwwroot"             # static files like images
+              )
+            } | Remove-Item -Recurse -Force
 
           # Copy new release files
-          Copy-Item -Path "deployed_output\*" -Destination $iisPath -Recurse -Force
+          Copy-Item -Path "deployed_output\published_output\*" -Destination $iisPath -Recurse -Force
 
-          - name: Restart IIS Site
-            shell: powershell
-            run: |
-              Import-Module WebAdministration
-              Restart-WebAppPool -Name "DefaultAppPool"
+      - name: Restart IIS Site
+        shell: powershell
+        run: |
+          Import-Module WebAdministration
+          Restart-WebAppPool -Name "DefaultAppPool"
