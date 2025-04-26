@@ -1,84 +1,20 @@
 # This workflow will build a NopCommerce v4.80 .NET v9.0-based project
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
 
-name: .NET
+name: Deploy bamboo NopCommerce
 
 on:
-  push:
-    branches: 
-      - dev       # 🔄 Run on feature/active development
-      - main      # ✅ Run when PR is merged into main
-  #pull_request:
-   # branches: 
-    #  - main      # 🧪 Run when PR targets main
+  workflow_dispatch: # Manual trigger
 
 permissions:
-  contents: write # ✅ ADD THIS BLOCK to give the workflow permission to write to releases
-  
+  contents: read
+
 jobs:
-  build:
-    runs-on: windows-latest
-
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: 9.0.x
-
-    - name: Restore dependencies
-      run: dotnet restore src/NopCommerce.sln
-
-    - name: Build
-      run: dotnet build src/NopCommerce.sln --configuration Release
-
-    # - name: Run Tests (optional)
-    #   run: dotnet test src/NopCommerce.sln
-    #   continue-on-error: true
-    
-    - name: Publish Project
-      run: dotnet publish src/Presentation/Nop.Web/Nop.Web.csproj -c Release -o published_output
-
-    - name: Upload Published Output
-      uses: actions/upload-artifact@v4
-      with:
-        name: published_output
-        path: published_output/
-        
-  release:
-    needs: build
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-
-    steps:
-      - name: Download Published Output
-        uses: actions/download-artifact@v4
-        with:
-          name: published_output
-          path: published_output
-    
-      - name: Zip Published Output
-        run: zip -r nopcommerce-release.zip published_output/
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: v${{ github.run_number }}
-          name: Release ${{ github.run_number }}
-          body: "Auto release generated from CI"
-          files: nopcommerce-release.zip
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
   deploy:
-    needs: release
     runs-on: self-hosted
-    if: github.ref == 'refs/heads/main'
-
     steps:
       - name: Wait for GitHub Release to be created
-        run: Start-Sleep -Seconds 15
+        run: Start-Sleep -Seconds 5
         
       - name: Download Latest Release Artifact
         uses: robinraju/release-downloader@v1.8
@@ -98,47 +34,37 @@ jobs:
         shell: powershell
         run: |
           $iisPath = "C:\inetpub\wwwroot\bamboo-git\published_output"
-          $siteName = "baamboo-git"   # IIS site name
-          $appPoolName = "baamboo-git"  #app pool name
-          $appcmdPath = "$env:SystemRoot\System32\inetsrv\appcmd.exe"
-
-          if (Test-Path $appcmdPath) {
-            # Stop the site to unlock files
-            & $appcmdPath stop site /site.name:$siteName
-          }
-
-          # Ensure destination exists
-          if (!(Test-Path $iisPath)) {
-            New-Item -ItemType Directory -Path $iisPath | Out-Null
-          }
-
-          # Remove all except critical folders/files
-            Get-ChildItem -Path $iisPath | Where-Object {
-            $_.Name -notin @(
-              "App_Data",           # important database/settings
-              "wwwroot",            # uploaded files, images, etc
-              "Logs",               # log files
-              "web.config"          # important configuration
-            )
-          } | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
-
-          # Copy new release files
-          Copy-Item -Path "deployed_output\published_output\*" -Destination $iisPath -Recurse -Force
-
-          # Start the IIS site
-          if (Test-Path $appcmdPath) {
-            & $appcmdPath start site /site.name:$siteName
-          }
-
-      - name: Restart IIS App Pool
-        shell: powershell
-        run: |
+          $siteName = "baamboo-git"
           $appPoolName = "baamboo-git"
           $appcmdPath = "$env:SystemRoot\System32\inetsrv\appcmd.exe"
 
           if (Test-Path $appcmdPath) {
-            & $appcmdPath recycle apppool /apppool.name:$appPoolName
-          } else {
-            Write-Error "appcmd.exe not found. IIS might not be installed."
-            exit 1
+            & $appcmdPath stop apppool /apppool.name:$appPoolName
+            & $appcmdPath stop site /site.name:$siteName
+          }
+
+          if (!(Test-Path $iisPath)) {
+            New-Item -ItemType Directory -Path $iisPath | Out-Null
+          }
+
+          Get-ChildItem -Path $iisPath | Where-Object {
+            $_.Name -notin @(
+              "App_Data",
+              "wwwroot",
+              "Logs",
+              "web.config"
+            )
+          } | ForEach-Object {
+            try {
+              Remove-Item -Path $_.FullName -Recurse -Force -ErrorAction Stop
+            } catch {
+              Write-Host "Skipping locked file: $($_.FullName)"
+            }
+          }
+
+          Copy-Item -Path "deployed_output\published_output\*" -Destination $iisPath -Recurse -Force
+
+          if (Test-Path $appcmdPath) {
+            & $appcmdPath start apppool /apppool.name:$appPoolName
+            & $appcmdPath start site /site.name:$siteName
           }
