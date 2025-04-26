@@ -72,7 +72,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           
   deploy:
+    needs: release
     runs-on: self-hosted
+    if: github.ref == 'refs/heads/main'
+    
     steps:
       - name: Wait for GitHub Release to be created
         run: Start-Sleep -Seconds 5
