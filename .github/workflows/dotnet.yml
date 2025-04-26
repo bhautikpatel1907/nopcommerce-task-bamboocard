@@ -100,12 +100,11 @@ jobs:
           $iisPath = "C:\inetpub\wwwroot\bamboo-git\published_output"
           $siteName = "baamboo-git"   # IIS site name
           $appPoolName = "baamboo-git"  #app pool name
+          $appcmdPath = "$env:SystemRoot\System32\inetsrv\appcmd.exe"
 
-          Import-Module WebAdministration
-
-          # Stop site (unlock files)
-          if ((Get-Website -Name $siteName).state -eq 'Started') {
-            Stop-Website -Name $siteName
+          if (Test-Path $appcmdPath) {
+            # Stop the site to unlock files
+            & $appcmdPath stop site /site.name:$siteName
           }
 
           # Ensure destination exists
@@ -115,19 +114,31 @@ jobs:
 
           # Remove all except critical folders/files
             Get-ChildItem -Path $iisPath | Where-Object {
-              $_.Name -notin @(
-                "App_Data",           # database settings
-                "wwwroot",            # static files like images
-                "Logs",
-                "web.config"
-              )
-            } | Remove-Item -Recurse -Force
+            $_.Name -notin @(
+              "App_Data",           # important database/settings
+              "wwwroot",            # uploaded files, images, etc
+              "Logs",               # log files
+              "web.config"          # important configuration
+            )
+          } | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
 
           # Copy new release files
           Copy-Item -Path "deployed_output\published_output\*" -Destination $iisPath -Recurse -Force
 
-      - name: Restart IIS Site
+          # Start the IIS site
+          if (Test-Path $appcmdPath) {
+            & $appcmdPath start site /site.name:$siteName
+          }
+
+      - name: Restart IIS App Pool
         shell: powershell
         run: |
-          Import-Module WebAdministration
-          Restart-WebAppPool -Name "DefaultAppPool"
+          $appPoolName = "baamboo-git"
+          $appcmdPath = "$env:SystemRoot\System32\inetsrv\appcmd.exe"
+
+          if (Test-Path $appcmdPath) {
+            & $appcmdPath recycle apppool /apppool.name:$appPoolName
+          } else {
+            Write-Error "appcmd.exe not found. IIS might not be installed."
+            exit 1
+          }
