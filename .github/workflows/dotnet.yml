@@ -36,35 +36,24 @@ jobs:
           $iisPath = "C:\inetpub\wwwroot\bamboo-git\published_output"
           $siteName = "baamboo-git"
           $appPoolName = "baamboo-git"
-          $appcmdPath = "$env:SystemRoot\System32\inetsrv\appcmd.exe"
 
-          if (Test-Path $appcmdPath) {
-            & $appcmdPath stop apppool /apppool.name:$appPoolName
-            & $appcmdPath stop site /site.name:$siteName
-          }
+          # Stop IIS Site and App Pool (forcefully)
+          Stop-WebSite -Name $siteName -ErrorAction SilentlyContinue
+          Stop-WebAppPool -Name $appPoolName -ErrorAction SilentlyContinue
 
-          if (!(Test-Path $iisPath)) {
-            New-Item -ItemType Directory -Path $iisPath | Out-Null
-          }
+          # Kill lingering w3wp.exe processes (if any)
+          Get-Process -Name "w3wp" -ErrorAction SilentlyContinue | Stop-Process -Force
 
-          Get-ChildItem -Path $iisPath | Where-Object {
-            $_.Name -notin @(
-              "App_Data",
-              "wwwroot",
-              "Logs",
-              "web.config"
-            )
-          } | ForEach-Object {
-            try {
-              Remove-Item -Path $_.FullName -Recurse -Force -ErrorAction Stop
-            } catch {
-              Write-Host "Skipping locked file: $($_.FullName)"
-            }
-          }
+          # Wait to ensure processes release locks
+          Start-Sleep -Seconds 5
 
+          # Clear target dir (except critical files)
+          $exclude = @("App_Data", "wwwroot", "Logs", "web.config")
+          Get-ChildItem -Path $iisPath | Where-Object { $exclude -notcontains $_.Name } | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+
+          # Deploy new files
           Copy-Item -Path "deployed_output\published_output\*" -Destination $iisPath -Recurse -Force
 
-          if (Test-Path $appcmdPath) {
-            & $appcmdPath start apppool /apppool.name:$appPoolName
-            & $appcmdPath start site /site.name:$siteName
-          }
+          # Restart IIS
+          Start-WebAppPool -Name $appPoolName
+          Start-WebSite -Name $siteName
