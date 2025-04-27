@@ -65,24 +65,31 @@ jobs:
   release:
     needs: build
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    # if: github.ref == 'refs/heads/main'
 
     steps:
       - name: Download Artifact
         uses: actions/download-artifact@v4
         with:
           name: nopcommerce-${{ github.ref_name }}
-          # path: published_output
+          path: artifact_content
     
       - name: Zip Artifacts
-        run: zip -r ${{ env.ARTIFACT_NAME }} published_output/
+        run: |
+          cd artifact_content
+          zip -r ../${{ env.ARTIFACT_NAME }} ./*
+          cd ..
+          ls -lh
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}-${{ github.run_number }}
-          name: Release ${{ github.ref_name }} #${{ github.run_number }}
-          body: "Auto-deploy to ${{ needs.build.outputs.env }}"
+          name: "Release ${{ github.ref_name }} (${{ needs.build.outputs.env }})"
+          body: |
+            Branch: ${{ github.ref_name }}
+            Environment: ${{ needs.build.outputs.env }}
+            Commit: ${{ github.sha }}
           files: ${{ env.ARTIFACT_NAME }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
