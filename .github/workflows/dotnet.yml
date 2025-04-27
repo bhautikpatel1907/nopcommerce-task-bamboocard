@@ -15,113 +15,78 @@ on:
 permissions:
   contents: write 
 
-env:
-  ARTIFACT_NAME: nopcommerce-release.zip
-  DEV_IIS_PATH: C:\inetpub\wwwroot\bamboo-git\published_output
-  UAT_IIS_PATH: C:\inetpub\wwwroot\bamboo-uat\published_output  # Different location for UAT
-
 jobs:
   build:
     runs-on: windows-latest
-    outputs:
-      env: ${{ github.ref_name == 'main' && 'uat' || 'dev' }}  # Set environment flag
 
     steps:
     - uses: actions/checkout@v4
-      with:
-        fetch-depth: 1  # Shallow clone (faster)
-    
-    - name: Cache NuGet
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~\.nuget\packages
-          src\packages
-        key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 9.0.x
 
-    - name: Restore & Build
-      run: |
-        dotnet restore src/NopCommerce.sln --verbosity minimal
-        dotnet build src/NopCommerce.sln -c Release --no-restore -m:2
+    - name: Restore dependencies
+      run: dotnet restore src/NopCommerce.sln
+
+    - name: Build
+      run: dotnet build src/NopCommerce.sln --configuration Release
 
     # - name: Run Tests (optional)
     #   run: dotnet test src/NopCommerce.sln
     #   continue-on-error: true
     
-    - name: Publish
-      run: dotnet publish src/Presentation/Nop.Web/Nop.Web.csproj -c Release -o published_output --no-build
+    - name: Publish Project
+      run: dotnet publish src/Presentation/Nop.Web/Nop.Web.csproj -c Release -o published_output
 
-    - name: Upload Artifact
+    - name: Upload Published Output
       uses: actions/upload-artifact@v4
       with:
-        name: nopcommerce-${{ github.ref_name }}  # Artifact name includes branch
+        name: published_output
         path: published_output/
         
   release:
     needs: build
     runs-on: ubuntu-latest
-    # if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main'
 
     steps:
-      - name: Download Artifact
+      - name: Download Published Output
         uses: actions/download-artifact@v4
         with:
-          name: nopcommerce-${{ github.ref_name }}
-          path: artifact_content
+          name: published_output
+          path: published_output
     
-      - name: Zip Artifacts
-        run: |
-          cd artifact_content
-          zip -r ../${{ env.ARTIFACT_NAME }} ./*
-          cd ..
-          ls -lh
+      - name: Zip Published Output
+        run: zip -r nopcommerce-release.zip published_output/
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: release-${{ github.ref_name }}-${{ github.run_number }}
-          name: "Release ${{ github.ref_name }} (${{ needs.build.outputs.env }})"
-          body: |
-            Branch: ${{ github.ref_name }}
-            Environment: ${{ needs.build.outputs.env }}
-            Commit: ${{ github.sha }}
-          files: ${{ env.ARTIFACT_NAME }}
+          tag_name: v${{ github.run_number }}
+          name: Release ${{ github.run_number }}
+          body: "Auto release generated from CI"
+          files: nopcommerce-release.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Verify Release
-        run: |
-          echo "Release created with tag: release-${{ github.ref_name }}-${{ github.run_number }}"
-          echo "View at: https://github.com/${{ github.repository }}/releases/tag/release-${{ github.ref_name }}-${{ github.run_number }}"
           
   deploy:
     needs: release
     runs-on: self-hosted
+    if: github.ref == 'refs/heads/main'
     
     steps:
-      - name: Determine Environment
-        id: env
-        run: |
-          echo "branch=${{ github.ref_name }}" >> $GITHUB_OUTPUT
-          echo "env=${{ github.ref_name == 'main' && 'uat' || 'dev' }}" >> $GITHUB_OUTPUT
-
-      # - name: Wait for GitHub Release to be created
-      #   run: Start-Sleep -Seconds 5
+      - name: Wait for GitHub Release to be created
+        run: Start-Sleep -Seconds 5
         
-      - name: Download Artifact
+      - name: Download Latest Release Artifact
         uses: robinraju/release-downloader@v1.8
         with:
           repository: ${{ github.repository }}
-          tag: release-${{ github.ref_name }}-*  # Matches branch-based tag
-          # latest: true
-          fileName: ${{ env.ARTIFACT_NAME }}
+          latest: true
+          fileName: "nopcommerce-release.zip"
           token: ${{ secrets.GITHUB_TOKEN }}
-        continue-on-error: true
 
       - name: Clean Existing Extract Folder
         run: Remove-Item -Path deployed_output -Recurse -Force -ErrorAction SilentlyContinue
@@ -132,14 +97,9 @@ jobs:
       - name: Deploy to IIS
         shell: powershell
         run: |
-          $iisPath = if ("${{ steps.env.outputs.env }}" -eq "dev") {
-            "${{ env.DEV_IIS_PATH }}"
-          } else {
-            "${{ env.UAT_IIS_PATH }}"
-          }
-
-          $siteName = "bamboo-${{ steps.env.outputs.env }}"
-          $appPoolName = "bamboo-${{ steps.env.outputs.env }}"
+          $iisPath = "C:\inetpub\wwwroot\bamboo-git\published_output"
+          $siteName = "baamboo-git"
+          $appPoolName = "baamboo-git"
 
           # Stop IIS Site and App Pool (forcefully)
           Stop-WebSite -Name $siteName -ErrorAction SilentlyContinue
@@ -159,7 +119,7 @@ jobs:
           Copy-Item -Path "deployed_output\published_output\*" -Destination $iisPath -Recurse -Force
 
           # Restart IIS
-          Write-Host "Restarting IIS ${{ steps.env.outputs.env }}..."
+          Write-Host "Restarting IIS..."
           Start-WebAppPool -Name $appPoolName
           Start-WebSite -Name $siteName
-          Write-Host "Deployed to ${{ steps.env.outputs.env }}"
+          Write-Host "Deployment successful!"
