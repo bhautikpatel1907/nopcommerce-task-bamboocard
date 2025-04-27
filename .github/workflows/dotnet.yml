@@ -84,7 +84,7 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref_name }}-${{ github.run_number }}
+          tag_name: release-${{ github.ref_name }}-${{ github.run_number }}
           name: "Release ${{ github.ref_name }} (${{ needs.build.outputs.env }})"
           body: |
             Branch: ${{ github.ref_name }}
@@ -93,6 +93,11 @@ jobs:
           files: ${{ env.ARTIFACT_NAME }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Verify Release
+        run: |
+            gh api repos/${{ github.repository }}/releases/tags/release-${{ github.ref_name }}-${{ github.run_number }} \
+            --jq '.assets[0].name'
           
   deploy:
     needs: release
@@ -112,10 +117,11 @@ jobs:
         uses: robinraju/release-downloader@v1.8
         with:
           repository: ${{ github.repository }}
-          tag: ${{ github.ref_name }}-*  # Matches branch-based tag
+          tag: release-${{ github.ref_name }}-*  # Matches branch-based tag
           # latest: true
           fileName: ${{ env.ARTIFACT_NAME }}
           token: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
 
       - name: Clean Existing Extract Folder
         run: Remove-Item -Path deployed_output -Recurse -Force -ErrorAction SilentlyContinue
