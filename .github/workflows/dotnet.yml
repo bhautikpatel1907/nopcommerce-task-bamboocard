@@ -100,16 +100,17 @@ jobs:
           $iisPath = "C:\inetpub\wwwroot\bamboo-git\published_output"
           $siteName = "baamboo-git"
           $appPoolName = "baamboo-git"
+          $appCmd = "$env:SystemRoot\System32\inetsrv\appcmd.exe"
 
           # Stop IIS Site and App Pool (forcefully)
-          Stop-WebSite -Name $siteName -ErrorAction SilentlyContinue
-          Stop-WebAppPool -Name $appPoolName -ErrorAction SilentlyContinue
+          & $appCmd stop site /site.name:"$siteName"
+          & $appCmd stop apppool /apppool.name:"$appPoolName"
 
           # Kill lingering w3wp.exe processes (if any)
           Get-Process -Name "w3wp" -ErrorAction SilentlyContinue | Stop-Process -Force
 
           # Wait to ensure processes release locks
-          Start-Sleep -Seconds 5
+          Start-Sleep -Seconds 3
 
           # Clear target dir (except critical files)
           $exclude = @("App_Data", "wwwroot", "Logs", "web.config")
@@ -120,6 +121,12 @@ jobs:
 
           # Restart IIS
           Write-Host "Restarting IIS..."
-          Start-WebAppPool -Name $appPoolName
-          Start-WebSite -Name $siteName
+          & $appCmd start apppool /apppool.name:"$appPoolName"
+          & $appCmd start site /site.name:"$siteName"
+
+          # Verify
+          $siteStatus = & $appCmd list site /text:STATE
+          $poolStatus = & $appCmd list apppool /text:STATE
+          Write-Host "Site Status: $siteStatus"
+          Write-Host "AppPool Status: $poolStatus"
           Write-Host "Deployment successful!"
