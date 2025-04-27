@@ -27,7 +27,8 @@
 }
 <div class="page home-page">
     <div class="page-body">
-        <h1>Temp: Final CICD working</h1>
+        <h1 style="text-align:center;">This site is configured using git CICD runner.</h1>
+        <br />
         @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.HomepageTop })
         @await Component.InvokeAsync(typeof(TopicBlockViewComponent), new { systemName = "HomepageText" })
         @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.HomepageBeforeCategories })
